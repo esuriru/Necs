@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <unordered_set>
+#include <unordered_map>
 
 namespace Nare
 {
@@ -11,12 +12,27 @@ namespace Nare
     {
         using ArchetypeID = uint32_t;
 
+        // For archetype graph.
+        struct ArchetypeEdge
+        {
+            Archetype& Add;
+            Archetype& Remove;
+        };
+
         struct Archetype
         {
             ArchetypeID ID;
             Signature signature;      
+            std::vector<BasicColumn> Components;
+            std::unordered_map<ComponentID, ArchetypeEdge> Edges;
         };
 
-        using ArchetypeSet = std::unordered_set<ArchetypeID>;
+        struct ArchetypeRecord
+        {
+            size_t column;
+        };
+
+        using ArchetypeMap = std::unordered_map<ArchetypeID, ArchetypeRecord>;
+
     }
 }

@@ -6,6 +6,8 @@ namespace Nare
 {
     namespace ECS
     {
-        using EntityID = uint32_t;
+        using EntityInternalType = uint32_t;
+        using EntityID = EntityInternalType;
+        using EntityGen = EntityInternalType;
     }
 }
