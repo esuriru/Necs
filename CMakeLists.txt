@@ -10,8 +10,8 @@ set (NECS_SOURCE_FILES
     "src/Registry.h"
 )
 
-add_library(${PROJECT_NAME} INTERFACE)
-target_include_directories(${PROJECT_NAME} INTERFACE "/src")
+add_library(${PROJECT_NAME} INTERFACE ${NECS_SOURCE_FILES})
+# target_include_directories(${PROJECT_NAME} INTERFACE "/src")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 # set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)

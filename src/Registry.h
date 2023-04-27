@@ -19,6 +19,10 @@ namespace Nare
         class Registry
         {
         public:
+            Registry()
+            {
+            }
+
             template<typename T> 
             auto GetComponent(EntityID entity, ComponentID component) -> T&
             {
@@ -46,36 +50,64 @@ namespace Nare
             inline auto MoveEntity(EntityID entity, Archetype& previousArchetype, size_t previousRow, Archetype& newArchetype) -> void
             {
                 // Move all of the old components from the previous archetype.
-                for (int i = 0; i < previousArchetype.Components.size(); ++i)
+                size_t newCountOfComponents = 0;
+                for (size_t i = 0; i < previousArchetype.Components.size(); ++i)
                 {
-                    newArchetype.Components[previousRow].AddToBack(previousArchetype.Components[previousRow].At(previousRow));
-                    previousArchetype.Components[previousRow].RemoveAt(previousRow);
+                    BasicColumn& previousArchetypeColumns = previousArchetype.Components[i];
+                    BasicColumn& nextArchetypeColumns = newArchetype.Components[i];
+
+                    nextArchetypeColumns.AddToBack(previousArchetype.Components[i].At(previousRow));
+                    previousArchetype.RemoveAt(previousRow);
+
+                    newCountOfComponents = newArchetypeColumns.Count();
                 }
 
-                Record newRecord = { newArchetype,  };
-                entityIndex_.insert({ entity, newRecord });
+                // Remove the entity from the current archetype and move him to the new archetype.
+                entityIndex_.insert({ entity, { newArchetype, newCountOfComponents - 1 } });
+            }
+
+            template<typename T>
+            inline auto RegisterComponent() -> void
+            {
+                const char* typeName = typeid(T).name();
+                if (componentTypes_.find(typeName) == componentTypes_.end())
+                {
+                    return;
+                }
+
+                componentTypes_.insert({ typeName, nextComponentID_ });
+                
+                // Setup the new archetypes.
+
+                ++nextComponentID_;
             }
 
             template<typename T>
             inline auto AddComponent(EntityID entity, T component) -> void
             {
+                // If there is not a component index for it yet, create it.
                 ComponentID id = GetComponentID<T>();
+
+                if (id == 0)
+                {
+                    RegisterComponent<T>();
+                }
+
                 Record& currentRecord = entityIndex_[entity];
                 Archetype& currentArchetype = currentRecord.Archetype;
                 Archetype& nextArchetype = currentArchetype.Edges.Add[]
                 MoveEntity(entity, currentArchetype, currentRecord.Row, nextArchetype);
 
-                componentIndex_.insert({ id, { nextArchetype.ID, nextArchetype.Components[] }})
-
                 // Now that they have moved archetypes, add the new component and record to the new archetype.
-                nextArchetype.Components[i].AddToBack()
+                if (componentIndex_.find(id) == componentIndex_.end())
+                {
+                    componentIndex_.insert({ id, { nextArchetype.ID, entityIndex_[entity] }});
+                }
+                
+                ArchetypeMap archetypes = componentIndex_[id];
+                ArchetypeRecord archetypeRecord = archetypes[nextArchetype.ID];
+                nextArchetype.Components[archetypeRecord].AddToBack(&component);
             }
-
-            // template<typename... Ts>
-            // auto View() -> std::vector<EntityID>
-            // {
-            //     if ()
-            // }
         private:
             struct Record
             {
@@ -92,27 +124,21 @@ namespace Nare
             unordered_map<EntityID, Record> entityIndex_;
             unordered_map<Signature, Archetype> signatureToArchetypeMap_;
             unordered_map<ComponentID, ArchetypeMap> componentIndex_;
+            ComponentID nextComponentID_;
 
             template<typename T>
-            auto GetComponentID() -> ComponentID
+            auto GetComponentID() const -> ComponentID
             {
                 // NOTE - TypeID is evaluated at compile time, so no overhead.
                 const char* typeName = typeid(T).name();
 
-                NECS_ASSERT(componentTypes_.find(typeName) != componentTypes_.end());
+                if (componentTypes_.find(typeName) == componentTypes_.end())
+                {
+                    return 0;
+                }
 
                 return componentTypes_[typeName];
             }
-
-            // template<typename T>
-            // inline auto GetComponentStorage() -> shared_ptr<ComponentStorage<T>>
-            // {
-            //     const char* typeName = typeid(T).name();
-
-            //     NECS_ASSERT(componentTypes_.find(typeName) != componentTypes_.end());
-
-            //     return std::static_pointer_cast<ComponentArray<T>>(componentStorage_[typeName]);
-            // }
         };
     }
 }
